@@ -35,7 +35,7 @@ p{font-size:17px;line-height:1.55;margin:12px 0}
 #begin{left:50%;transform:translateX(-50%);white-space:nowrap}
 .hint{font:12px Arial,sans-serif;opacity:.62;margin-top:12px}
 .letter{width:min(100%,350px);padding:28px 23px;border-radius:24px;background:rgba(255,245,237,.96);color:#2c1520;box-shadow:0 20px 70px rgba(0,0,0,.38);transform:rotate(-1deg)}
-.letter h2{font-size:28px}.letter p{text-align:left;font-size:15px;line-height:1.7}
+.letter h2{font-size:28px}.letter p{text-align:left;font-size:15px;line-height:1.7}.letterNext{margin-top:16px;color:#31101f}
 .photoWrap{width:100%;height:64vh;display:flex;align-items:center;justify-content:center;position:relative}
 .photoCard{position:relative;width:min(100%,350px);height:100%;max-height:610px;border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,.28);box-shadow:0 25px 80px rgba(0,0,0,.5);background:#190d15}
 .photoCard img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .6s ease,transform 5s ease}
@@ -96,6 +96,7 @@ p{font-size:17px;line-height:1.55;margin:12px 0}
       <p>On your birthday, I only wish for your happiness, your peace, and countless beautiful moments together.</p>
       <p><b>Happy Birthday, my love.</b><br>You are my home, my happiness, and my forever. ❤️</p>
       <div class="script" style="text-align:right;font-size:20px">— Farid</div>
+      <button class="btn primary letterNext" id="letterNext">Continue ❤️</button>
     </div>
   </div>
 </section>
@@ -114,56 +115,190 @@ p{font-size:17px;line-height:1.55;margin:12px 0}
 </div>
 
 <script>
-const scenes=[...document.querySelectorAll('.scene')], bars=document.getElementById('progress');
-let idx=0, timer=null, paused=false, soundOn=false, audioCtx=null;
-scenes.forEach((_,i)=>{const b=document.createElement('div');b.className='bar';b.innerHTML='<i></i>';bars.appendChild(b)});
+const scenes=[...document.querySelectorAll('.scene')];
+const bars=document.getElementById('progress');
+let idx=0, photoTimer=null, letterTimer=null, paused=false, soundOn=false, audioCtx=null;
+
+scenes.forEach((_,i)=>{
+  const b=document.createElement('div');
+  b.className='bar';
+  b.innerHTML='<i></i>';
+  bars.appendChild(b);
+});
 const barEls=[...bars.querySelectorAll('.bar i')];
-function show(n,auto=true){
-  clearTimeout(timer); idx=n;
-  scenes.forEach((s,i)=>s.classList.toggle('active',i===n));
-  barEls.forEach((b,i)=>{b.style.transition='none';b.style.width=i<n?'100%':'0';});
-  if(n===3) startPhotos();
-  if(auto && !paused && n!==0 && n!==1 && n!==2 && n!==4 && n!==5){
-    timer=setTimeout(()=>show(n+1),6000);
-  }
-  if(auto && !paused && n===4) timer=setTimeout(()=>show(5),10000);
-}
-function advance(){ if(idx<5) show(idx+1); }
-document.getElementById('begin').onclick=()=>{soundOn=true; beep(520,.08); show(1,false)};
-document.querySelectorAll('.balloon').forEach((b)=>b.addEventListener('click',()=>{if(b.classList.contains('popped'))return;b.classList.add('popped');beep(180,.06);if([...document.querySelectorAll('.balloon')].every(x=>x.classList.contains('popped'))){setTimeout(()=>show(2,false),550)}}));
-document.getElementById('wish').onclick=()=>{beep(700,.1);setTimeout(()=>show(3,false),350)};
-const photos=[1,2,3,4,5,6,7,8,9].map(n=>`page-${n}.jpg`);
-const caps=['My favourite person. ♥','The smile I could never get tired of.','One of those moments I wish I could pause.','You make simple days feel special.','A memory I will always keep close.','My beautiful Vaheda.','Every picture has a story — ours.','More moments, more memories, more us.','And I still choose you. ❤️'];
-let pi=0,photoTimer;
-const img=document.getElementById('photo'),cap=document.getElementById('cap'),num=document.getElementById('num'),dots=document.getElementById('dots');
-photos.forEach((_,i)=>{let d=document.createElement('div');d.className='dot';d.onclick=()=>setPhoto(i);dots.appendChild(d)});
-function setPhoto(n){
- pi=(n+photos.length)%photos.length;
- img.classList.remove('show');
- const tryPaths=[photos[pi],`photos/${photos[pi]}`];
- let k=0;
- const load=()=>{img.src=tryPaths[k]; img.onerror=()=>{k++; if(k<tryPaths.length)load()}; img.onload=()=>img.classList.add('show')}; load();
- cap.textContent=caps[pi];num.textContent=String(pi+1).padStart(2,'0')+' / 09';
- [...dots.children].forEach((d,i)=>d.classList.toggle('on',i===pi));
-}
-function startPhotos(){
+
+function clearAllTimers(){
   clearInterval(photoTimer);
+  clearTimeout(letterTimer);
+  photoTimer=null;
+  letterTimer=null;
+}
+
+function show(n){
+  clearAllTimers();
+  idx=Math.max(0,Math.min(n,5));
+  scenes.forEach((scene,i)=>scene.classList.toggle('active',i===idx));
+  barEls.forEach((bar,i)=>{
+    bar.style.transition='none';
+    bar.style.width=i<idx?'100%':'0';
+  });
+
+  if(idx===3) startPhotos();
+  if(idx===4 && !paused) letterTimer=setTimeout(()=>show(5),9000);
+}
+
+function next(){
+  if(idx<5) show(idx+1);
+}
+
+document.getElementById('begin').onclick=()=>{
+  soundOn=true;
+  document.getElementById('sound').textContent='♫';
+  beep(520,.08);
+  show(1);
+};
+
+document.querySelectorAll('.balloon').forEach(balloon=>{
+  balloon.addEventListener('click',()=>{
+    if(balloon.classList.contains('popped')) return;
+    balloon.classList.add('popped');
+    beep(180,.06);
+    const all=[...document.querySelectorAll('.balloon')];
+    if(all.every(x=>x.classList.contains('popped'))){
+      setTimeout(()=>show(2),550);
+    }
+  });
+});
+
+document.getElementById('wish').onclick=()=>{
+  beep(700,.1);
+  setTimeout(()=>show(3),300);
+};
+
+const photos=[1,2,3,4,5,6,7,8,9].map(n=>`page-${n}.jpg`);
+const caps=[
+  'My favourite person. ♥',
+  'The smile I could never get tired of.',
+  'One of those moments I wish I could pause.',
+  'You make simple days feel special.',
+  'A memory I will always keep close.',
+  'My beautiful Vaheda.',
+  'Every picture has a story — ours.',
+  'More moments, more memories, more us.',
+  'And I still choose you. ❤️'
+];
+
+let pi=0;
+const img=document.getElementById('photo');
+const cap=document.getElementById('cap');
+const num=document.getElementById('num');
+const dots=document.getElementById('dots');
+
+photos.forEach((_,i)=>{
+  const d=document.createElement('div');
+  d.className='dot';
+  d.onclick=()=>setPhoto(i);
+  dots.appendChild(d);
+});
+
+function setPhoto(n){
+  pi=(n+photos.length)%photos.length;
+  img.classList.remove('show');
+
+  const paths=[photos[pi],`photos/${photos[pi]}`];
+  let k=0;
+  const load=()=>{
+    img.onerror=()=>{
+      k++;
+      if(k<paths.length) load();
+      else img.style.opacity='0';
+    };
+    img.onload=()=>img.classList.add('show');
+    img.src=paths[k];
+  };
+  load();
+
+  cap.textContent=caps[pi];
+  num.textContent=String(pi+1).padStart(2,'0')+' / 09';
+  [...dots.children].forEach((d,i)=>d.classList.toggle('on',i===pi));
+}
+
+function startPhotos(){
   setPhoto(0);
   photoTimer=setInterval(()=>{
-    if(pi < photos.length-1){
+    if(pi<photos.length-1){
       setPhoto(pi+1);
     }else{
       clearInterval(photoTimer);
-      setTimeout(()=>show(4,false),1800);
+      photoTimer=null;
+      setTimeout(()=>show(4),1400);
     }
   },4200);
 }
-document.getElementById('photoNext').onclick=()=>{clearInterval(photoTimer);show(4,false)};
-document.getElementById('replay').onclick=()=>{clearInterval(photoTimer);paused=false;document.getElementById('pause').textContent='Ⅱ';show(0,false)};
-document.getElementById('pause').onclick=()=>{paused=!paused;document.getElementById('pause').textContent=paused?'▶':'Ⅱ';if(!paused && idx===4)timer=setTimeout(()=>show(5),10000)};
-document.getElementById('sound').onclick=()=>{soundOn=!soundOn;document.getElementById('sound').textContent=soundOn?'♫':'♪';if(soundOn)beep(640,.1)};
-function beep(freq,dur){if(!soundOn)return;try{audioCtx ||= new (window.AudioContext||window.webkitAudioContext)();let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=freq;o.type='sine';g.gain.setValueAtTime(.0001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.07,audioCtx.currentTime+.01);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+dur);o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+dur+.02)}catch(e){}}
-let sx=0;document.addEventListener('touchstart',e=>sx=e.changedTouches[0].clientX,{passive:true});document.addEventListener('touchend',e=>{let dx=e.changedTouches[0].clientX-sx;if(idx===3 && Math.abs(dx)>55)setPhoto(pi+(dx<0?1:-1))},{passive:true});
+
+document.getElementById('photoNext').onclick=()=>{
+  if(pi<photos.length-1) setPhoto(pi+1);
+  else show(4);
+};
+
+document.getElementById('letterNext').onclick=()=>show(5);
+
+document.getElementById('replay').onclick=()=>{
+  paused=false;
+  document.getElementById('pause').textContent='Ⅱ';
+  show(0);
+};
+
+document.getElementById('pause').onclick=()=>{
+  paused=!paused;
+  document.getElementById('pause').textContent=paused?'▶':'Ⅱ';
+  if(paused) clearAllTimers();
+  else if(idx===3) startPhotos();
+  else if(idx===4) letterTimer=setTimeout(()=>show(5),9000);
+};
+
+document.getElementById('sound').onclick=()=>{
+  soundOn=!soundOn;
+  document.getElementById('sound').textContent=soundOn?'♫':'♪';
+  if(soundOn) beep(640,.1);
+};
+
+function beep(freq,dur){
+  if(!soundOn) return;
+  try{
+    audioCtx ||= new (window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator();
+    const g=audioCtx.createGain();
+    o.frequency.value=freq;
+    o.type='sine';
+    g.gain.setValueAtTime(.0001,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.07,audioCtx.currentTime+.01);
+    g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+dur);
+    o.connect(g).connect(audioCtx.destination);
+    o.start();
+    o.stop(audioCtx.currentTime+dur+.02);
+  }catch(e){}
+}
+
+let sx=0,sy=0;
+document.addEventListener('touchstart',e=>{
+  sx=e.changedTouches[0].clientX;
+  sy=e.changedTouches[0].clientY;
+},{passive:true});
+
+document.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-sx;
+  const dy=e.changedTouches[0].clientY-sy;
+
+  if(idx===3 && Math.abs(dx)>55 && Math.abs(dx)>Math.abs(dy)){
+    if(dx<0){
+      if(pi<photos.length-1) setPhoto(pi+1);
+      else show(4);
+    }else setPhoto(pi-1);
+  }else if(idx>=4 && dy<-55){
+    next();
+  }
+},{passive:true});
 </script>
 </body>
 </html>
