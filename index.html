@@ -30,9 +30,9 @@ p{font-size:17px;line-height:1.55;margin:12px 0}
 .btn{border:1px solid rgba(255,255,255,.42);background:rgba(255,255,255,.10);color:#fff;border-radius:999px;padding:13px 24px;font:600 14px Arial,sans-serif;letter-spacing:.04em;cursor:pointer;backdrop-filter:blur(10px)}
 .btn.primary{background:#fff;color:#31101f;border-color:#fff}
 .btn:active{transform:scale(.97)}
-.choice{position:relative;width:min(100%,340px);height:165px;margin-top:14px}
+.choice{position:relative;width:min(100%,340px);height:110px;margin-top:14px}.choice.single{height:78px}
 .choice .btn{position:absolute;top:75px}
-#yes{left:55px}#no{right:55px}
+#begin{left:50%;transform:translateX(-50%);white-space:nowrap}
 .hint{font:12px Arial,sans-serif;opacity:.62;margin-top:12px}
 .letter{width:min(100%,350px);padding:28px 23px;border-radius:24px;background:rgba(255,245,237,.96);color:#2c1520;box-shadow:0 20px 70px rgba(0,0,0,.38);transform:rotate(-1deg)}
 .letter h2{font-size:28px}.letter p{text-align:left;font-size:15px;line-height:1.7}
@@ -42,7 +42,7 @@ p{font-size:17px;line-height:1.55;margin:12px 0}
 .photoCard img.show{opacity:1;transform:scale(1.04)}
 .photoCard:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05),transparent 55%,rgba(0,0,0,.48))}
 .caption{position:absolute;z-index:2;left:20px;right:20px;bottom:18px;text-align:left}.caption strong{font-size:18px;font-weight:500}.caption span{display:block;font:11px Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;opacity:.72;margin-top:5px}
-.dots{display:flex;gap:5px;justify-content:center;margin-top:12px}.dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.3)}.dot.on{width:18px;border-radius:8px;background:#fff}
+.dots{display:flex;gap:5px;justify-content:center;margin-top:12px}.photoNext{margin-top:14px;padding:10px 20px;font-size:13px}.dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.3)}.dot.on{width:18px;border-radius:8px;background:#fff}
 .balloons{display:flex;gap:12px;justify-content:center;margin:22px 0 10px}.balloon{width:57px;height:70px;border-radius:50% 50% 48% 48%;background:linear-gradient(145deg,#ffbfd2,#b83f70);box-shadow:inset -8px -10px 18px rgba(0,0,0,.16);cursor:pointer;position:relative}.balloon:after{content:"";position:absolute;bottom:-13px;left:50%;width:1px;height:17px;background:#fff8}.balloon.popped{animation:pop .35s ease forwards}@keyframes pop{50%{transform:scale(1.35);opacity:.5}100%{transform:scale(.1);opacity:0}}
 .cake{font-size:100px;filter:drop-shadow(0 15px 30px rgba(0,0,0,.35));animation:float 3s ease-in-out infinite}@keyframes float{50%{transform:translateY(-7px)}}
 .final h1{font-size:54px}.final .big{font-size:22px;line-height:1.55}.spark{font-size:28px;animation:blink 1.3s infinite alternate}@keyframes blink{to{transform:scale(1.2);opacity:.6}}
@@ -61,11 +61,10 @@ p{font-size:17px;line-height:1.55;margin:12px 0}
     <div class="kicker">A little surprise for</div>
     <h1>Vaheda<br><span class="script heart">✨️♥️ انت الحياة</span></h1>
     <p>There is something I made just for you.</p>
-    <div class="choice">
-      <button class="btn primary" id="yes">Yes ❤️</button>
-      <button class="btn" id="no">No 🙈</button>
+    <div class="choice single">
+      <button class="btn primary" id="begin">Tap to begin ❤️</button>
     </div>
-    <div class="hint">Choose carefully… 😌</div>
+    <div class="hint">A little surprise, made with love.</div>
   </div>
 </section>
 
@@ -84,6 +83,7 @@ p{font-size:17px;line-height:1.55;margin:12px 0}
   <div><div class="kicker">Our little memories</div><h2>A few moments<br><span class="script">I keep close</span></h2>
     <div class="photoWrap"><div class="photoCard"><img id="photo" alt="A memory of Vaheda"><div class="caption"><strong id="cap">My favourite person. ♥</strong><span id="num">01 / 09</span></div></div></div>
     <div class="dots" id="dots"></div>
+    <button class="btn primary photoNext" id="photoNext">Next ❤️</button>
   </div>
 </section>
 
@@ -129,10 +129,7 @@ function show(n,auto=true){
   if(auto && !paused && n===4) timer=setTimeout(()=>show(5),10000);
 }
 function advance(){ if(idx<5) show(idx+1); }
-document.getElementById('yes').onclick=()=>{soundOn=true; beep(520,.08); show(1,false)};
-const no=document.getElementById('no');
-function moveNo(){const p=no.parentElement.getBoundingClientRect(), w=no.offsetWidth,h=no.offsetHeight; const x=Math.random()*(p.width-w), y=Math.random()*(p.height-h); no.style.left=x+'px';no.style.top=y+'px';}
-['mouseenter','touchstart','pointerdown'].forEach(e=>no.addEventListener(e,ev=>{ev.preventDefault();moveNo();}));
+document.getElementById('begin').onclick=()=>{soundOn=true; beep(520,.08); show(1,false)};
 document.querySelectorAll('.balloon').forEach((b)=>b.addEventListener('click',()=>{if(b.classList.contains('popped'))return;b.classList.add('popped');beep(180,.06);if([...document.querySelectorAll('.balloon')].every(x=>x.classList.contains('popped'))){setTimeout(()=>show(2,false),550)}}));
 document.getElementById('wish').onclick=()=>{beep(700,.1);setTimeout(()=>show(3,false),350)};
 const photos=[1,2,3,4,5,6,7,8,9].map(n=>`page-${n}.jpg`);
@@ -149,7 +146,19 @@ function setPhoto(n){
  cap.textContent=caps[pi];num.textContent=String(pi+1).padStart(2,'0')+' / 09';
  [...dots.children].forEach((d,i)=>d.classList.toggle('on',i===pi));
 }
-function startPhotos(){clearInterval(photoTimer);setPhoto(0);photoTimer=setInterval(()=>setPhoto(pi+1),4200)}
+function startPhotos(){
+  clearInterval(photoTimer);
+  setPhoto(0);
+  photoTimer=setInterval(()=>{
+    if(pi < photos.length-1){
+      setPhoto(pi+1);
+    }else{
+      clearInterval(photoTimer);
+      setTimeout(()=>show(4,false),1800);
+    }
+  },4200);
+}
+document.getElementById('photoNext').onclick=()=>{clearInterval(photoTimer);show(4,false)};
 document.getElementById('replay').onclick=()=>{clearInterval(photoTimer);paused=false;document.getElementById('pause').textContent='Ⅱ';show(0,false)};
 document.getElementById('pause').onclick=()=>{paused=!paused;document.getElementById('pause').textContent=paused?'▶':'Ⅱ';if(!paused && idx===4)timer=setTimeout(()=>show(5),10000)};
 document.getElementById('sound').onclick=()=>{soundOn=!soundOn;document.getElementById('sound').textContent=soundOn?'♫':'♪';if(soundOn)beep(640,.1)};
