@@ -60,6 +60,10 @@ p{font-size:17px;line-height:1.55;margin:12px 0}
   .letter h2{font-size:25px}
   .letter p{font-size:14px;line-height:1.5;margin:8px 0}
 }
+
+#musicToggle{font-size:16px}
+#musicToggle.on{box-shadow:0 0 0 2px rgba(255,255,255,.18),0 8px 24px rgba(0,0,0,.2)}
+
 </style>
 </head>
 <body>
@@ -125,6 +129,31 @@ p{font-size:17px;line-height:1.55;margin:12px 0}
 <div class="footer">MADE WITH LOVE • FARID ♥</div>
 </div>
 
+<script>{
+      musicReady=true;
+      bgMusic.pause();
+      bgMusic.currentTime=0;
+    }).catch(()=>{});
+  }
+}
+
+function startRomanticMusic(){
+  if(!bgMusic) return;
+  bgMusic.volume=0.62;
+  musicMuted=false;
+  const p=bgMusic.play();
+  if(p && p.then) p.then(()=>{musicStarted=true;}).catch(()=>{});
+  else musicStarted=true;
+  if(musicToggle) musicToggle.classList.add('on');
+}
+
+function stopRomanticMusic(){
+  if(!bgMusic) return;
+  bgMusic.pause();
+  musicStarted=false;
+  if(musicToggle) musicToggle.classList.remove('on');
+}
+
 <script>
 const scenes=[...document.querySelectorAll('.scene')];
 const bars=document.getElementById('progress');
@@ -154,7 +183,7 @@ function show(n){
     bar.style.width=i<idx?'100%':'0';
   });
 
-  if(idx===3) startPhotos();
+  if(idx===3){ startRomanticMusic(); startPhotos(); }
   if(idx===4 && !paused) letterTimer=setTimeout(()=>show(5),9000);
 }
 
@@ -163,6 +192,7 @@ function next(){
 }
 
 document.getElementById('begin').onclick=()=>{
+  unlockMusic();
   soundOn=true;
   document.getElementById('sound').textContent='♫';
   beep(520,.08);
@@ -255,6 +285,7 @@ document.getElementById('photoNext').onclick=()=>{
 document.getElementById('letterNext').onclick=()=>show(5);
 
 document.getElementById('replay').onclick=()=>{
+  stopRomanticMusic();
   paused=false;
   document.getElementById('pause').textContent='Ⅱ';
   show(0);
@@ -263,10 +294,31 @@ document.getElementById('replay').onclick=()=>{
 document.getElementById('pause').onclick=()=>{
   paused=!paused;
   document.getElementById('pause').textContent=paused?'▶':'Ⅱ';
-  if(paused) clearAllTimers();
-  else if(idx===3) startPhotos();
+  if(paused){
+    clearAllTimers();
+    if(bgMusic) bgMusic.pause();
+  }else{
+    if(idx>=3) startRomanticMusic();
+    if(idx===3) startPhotos();
+  }
   else if(idx===4) letterTimer=setTimeout(()=>show(5),9000);
 };
+
+
+if(musicToggle){
+  musicToggle.onclick=()=>{
+    musicMuted=!musicMuted;
+    if(musicMuted){
+      if(bgMusic) bgMusic.pause();
+      musicToggle.textContent='♪';
+      musicToggle.classList.remove('on');
+    }else{
+      if(idx>=3) startRomanticMusic();
+      musicToggle.textContent='♫';
+      musicToggle.classList.add('on');
+    }
+  };
+}
 
 document.getElementById('sound').onclick=()=>{
   soundOn=!soundOn;
@@ -311,5 +363,10 @@ document.addEventListener('touchend',e=>{
   }
 },{passive:true});
 </script>
+
+<audio id="bgMusic" preload="auto" loop playsinline>
+  <source src="romantic_instrumental.mp3" type="audio/mpeg">
+</audio>
+
 </body>
 </html>
