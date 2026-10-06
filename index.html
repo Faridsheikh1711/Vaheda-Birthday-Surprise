@@ -60,10 +60,6 @@ p{font-size:17px;line-height:1.55;margin:12px 0}
   .letter h2{font-size:25px}
   .letter p{font-size:14px;line-height:1.5;margin:8px 0}
 }
-
-#musicToggle{font-size:16px}
-#musicToggle.on{box-shadow:0 0 0 2px rgba(255,255,255,.18),0 8px 24px rgba(0,0,0,.2)}
-
 </style>
 </head>
 <body>
@@ -129,35 +125,11 @@ p{font-size:17px;line-height:1.55;margin:12px 0}
 <div class="footer">MADE WITH LOVE • FARID ♥</div>
 </div>
 
-<script>{
-      musicReady=true;
-      bgMusic.pause();
-      bgMusic.currentTime=0;
-    }).catch(()=>{});
-  }
-}
-
-function startRomanticMusic(){
-  if(!bgMusic) return;
-  bgMusic.volume=0.62;
-  musicMuted=false;
-  const p=bgMusic.play();
-  if(p && p.then) p.then(()=>{musicStarted=true;}).catch(()=>{});
-  else musicStarted=true;
-  if(musicToggle) musicToggle.classList.add('on');
-}
-
-function stopRomanticMusic(){
-  if(!bgMusic) return;
-  bgMusic.pause();
-  musicStarted=false;
-  if(musicToggle) musicToggle.classList.remove('on');
-}
-
 <script>
 const scenes=[...document.querySelectorAll('.scene')];
 const bars=document.getElementById('progress');
-let idx=0, photoTimer=null, letterTimer=null, paused=false, soundOn=false, audioCtx=null;
+const bgMusic=document.getElementById('bgMusic');
+let idx=0, photoTimer=null, letterTimer=null, paused=false, soundOn=false, audioCtx=null, musicUnlocked=false, musicOn=false;
 
 scenes.forEach((_,i)=>{
   const b=document.createElement('div');
@@ -174,6 +146,34 @@ function clearAllTimers(){
   letterTimer=null;
 }
 
+function prepareMusic(){
+  if(!bgMusic || musicUnlocked) return;
+  bgMusic.volume=0.001;
+  const p=bgMusic.play();
+  if(p && p.then){
+    p.then(()=>{ musicUnlocked=true; }).catch(()=>{});
+  }
+}
+
+function fadeMusicIn(){
+  if(!bgMusic) return;
+  musicOn=true;
+  bgMusic.volume=0.001;
+  const p=bgMusic.play();
+  if(p && p.catch) p.catch(()=>{});
+  let v=0.001;
+  const timer=setInterval(()=>{
+    v=Math.min(.62,v+.04);
+    bgMusic.volume=v;
+    if(v>=.62) clearInterval(timer);
+  },120);
+}
+
+function pauseMusic(){
+  if(bgMusic) bgMusic.pause();
+  musicOn=false;
+}
+
 function show(n){
   clearAllTimers();
   idx=Math.max(0,Math.min(n,5));
@@ -182,17 +182,14 @@ function show(n){
     bar.style.transition='none';
     bar.style.width=i<idx?'100%':'0';
   });
-
-  if(idx===3){ startRomanticMusic(); startPhotos(); }
+  if(idx===3) startPhotos();
   if(idx===4 && !paused) letterTimer=setTimeout(()=>show(5),9000);
 }
 
-function next(){
-  if(idx<5) show(idx+1);
-}
+function next(){ if(idx<5) show(idx+1); }
 
 document.getElementById('begin').onclick=()=>{
-  unlockMusic();
+  prepareMusic();
   soundOn=true;
   document.getElementById('sound').textContent='♫';
   beep(520,.08);
@@ -205,9 +202,7 @@ document.querySelectorAll('.balloon').forEach(balloon=>{
     balloon.classList.add('popped');
     beep(180,.06);
     const all=[...document.querySelectorAll('.balloon')];
-    if(all.every(x=>x.classList.contains('popped'))){
-      setTimeout(()=>show(2),550);
-    }
+    if(all.every(x=>x.classList.contains('popped'))) setTimeout(()=>show(2),550);
   });
 });
 
@@ -218,107 +213,61 @@ document.getElementById('wish').onclick=()=>{
 
 const photos=[1,2,3,4,5,6,7,8,9].map(n=>`page-${n}.jpg`);
 const caps=[
-  'My favourite person. ♥',
-  'The smile I could never get tired of.',
-  'One of those moments I wish I could pause.',
-  'You make simple days feel special.',
-  'A memory I will always keep close.',
-  'My beautiful Vaheda.',
-  'Every picture has a story — ours.',
-  'More moments, more memories, more us.',
+  'My favourite person. ♥','The smile I could never get tired of.',
+  'One of those moments I wish I could pause.','You make simple days feel special.',
+  'A memory I will always keep close.','My beautiful Vaheda.',
+  'Every picture has a story — ours.','More moments, more memories, more us.',
   'And I still choose you. ❤️'
 ];
-
 let pi=0;
 const img=document.getElementById('photo');
 const cap=document.getElementById('cap');
 const num=document.getElementById('num');
 const dots=document.getElementById('dots');
-
-photos.forEach((_,i)=>{
-  const d=document.createElement('div');
-  d.className='dot';
-  d.onclick=()=>setPhoto(i);
-  dots.appendChild(d);
-});
+photos.forEach((_,i)=>{const d=document.createElement('div');d.className='dot';d.onclick=()=>setPhoto(i);dots.appendChild(d);});
 
 function setPhoto(n){
   pi=(n+photos.length)%photos.length;
   img.classList.remove('show');
-
   const paths=[photos[pi],`photos/${photos[pi]}`];
   let k=0;
   const load=()=>{
-    img.onerror=()=>{
-      k++;
-      if(k<paths.length) load();
-      else img.style.opacity='0';
-    };
-    img.onload=()=>img.classList.add('show');
+    img.onerror=()=>{k++; if(k<paths.length) load(); else img.style.opacity='0';};
+    img.onload=()=>{img.style.opacity='1';img.classList.add('show');};
     img.src=paths[k];
   };
   load();
-
   cap.textContent=caps[pi];
   num.textContent=String(pi+1).padStart(2,'0')+' / 09';
   [...dots.children].forEach((d,i)=>d.classList.toggle('on',i===pi));
 }
 
 function startPhotos(){
+  fadeMusicIn();
   setPhoto(0);
   photoTimer=setInterval(()=>{
-    if(pi<photos.length-1){
-      setPhoto(pi+1);
-    }else{
-      clearInterval(photoTimer);
-      photoTimer=null;
-      setTimeout(()=>show(4),1400);
-    }
+    if(pi<photos.length-1) setPhoto(pi+1);
+    else { clearInterval(photoTimer); photoTimer=null; setTimeout(()=>show(4),1400); }
   },4200);
 }
 
-document.getElementById('photoNext').onclick=()=>{
-  if(pi<photos.length-1) setPhoto(pi+1);
-  else show(4);
-};
-
+document.getElementById('photoNext').onclick=()=>{ if(pi<photos.length-1) setPhoto(pi+1); else show(4); };
 document.getElementById('letterNext').onclick=()=>show(5);
 
 document.getElementById('replay').onclick=()=>{
-  stopRomanticMusic();
   paused=false;
   document.getElementById('pause').textContent='Ⅱ';
+  pauseMusic();
+  if(bgMusic) bgMusic.currentTime=0;
   show(0);
 };
 
 document.getElementById('pause').onclick=()=>{
   paused=!paused;
   document.getElementById('pause').textContent=paused?'▶':'Ⅱ';
-  if(paused){
-    clearAllTimers();
-    if(bgMusic) bgMusic.pause();
-  }else{
-    if(idx>=3) startRomanticMusic();
-    if(idx===3) startPhotos();
-  }
-  else if(idx===4) letterTimer=setTimeout(()=>show(5),9000);
+  if(paused){ clearAllTimers(); if(bgMusic) bgMusic.pause(); }
+  else { if(idx>=3) fadeMusicIn(); if(idx===3) startPhotos(); else if(idx===4) letterTimer=setTimeout(()=>show(5),9000); }
 };
-
-
-if(musicToggle){
-  musicToggle.onclick=()=>{
-    musicMuted=!musicMuted;
-    if(musicMuted){
-      if(bgMusic) bgMusic.pause();
-      musicToggle.textContent='♪';
-      musicToggle.classList.remove('on');
-    }else{
-      if(idx>=3) startRomanticMusic();
-      musicToggle.textContent='♫';
-      musicToggle.classList.add('on');
-    }
-  };
-}
 
 document.getElementById('sound').onclick=()=>{
   soundOn=!soundOn;
@@ -330,43 +279,24 @@ function beep(freq,dur){
   if(!soundOn) return;
   try{
     audioCtx ||= new (window.AudioContext||window.webkitAudioContext)();
-    const o=audioCtx.createOscillator();
-    const g=audioCtx.createGain();
-    o.frequency.value=freq;
-    o.type='sine';
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.frequency.value=freq;o.type='sine';
     g.gain.setValueAtTime(.0001,audioCtx.currentTime);
     g.gain.exponentialRampToValueAtTime(.07,audioCtx.currentTime+.01);
     g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+dur);
-    o.connect(g).connect(audioCtx.destination);
-    o.start();
-    o.stop(audioCtx.currentTime+dur+.02);
+    o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+dur+.02);
   }catch(e){}
 }
 
 let sx=0,sy=0;
-document.addEventListener('touchstart',e=>{
-  sx=e.changedTouches[0].clientX;
-  sy=e.changedTouches[0].clientY;
-},{passive:true});
-
+document.addEventListener('touchstart',e=>{sx=e.changedTouches[0].clientX;sy=e.changedTouches[0].clientY;},{passive:true});
 document.addEventListener('touchend',e=>{
-  const dx=e.changedTouches[0].clientX-sx;
-  const dy=e.changedTouches[0].clientY-sy;
-
+  const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
   if(idx===3 && Math.abs(dx)>55 && Math.abs(dx)>Math.abs(dy)){
-    if(dx<0){
-      if(pi<photos.length-1) setPhoto(pi+1);
-      else show(4);
-    }else setPhoto(pi-1);
-  }else if(idx>=4 && dy<-55){
-    next();
-  }
+    if(dx<0){if(pi<photos.length-1)setPhoto(pi+1);else show(4);}else setPhoto(pi-1);
+  }else if(idx>=4 && dy<-55) next();
 },{passive:true});
 </script>
-
-<audio id="bgMusic" preload="auto" loop playsinline>
-  <source src="romantic_instrumental.mp3" type="audio/mpeg">
-</audio>
-
+<audio id="bgMusic" preload="auto" loop playsinline><source src="romantic_instrumental.mp3" type="audio/mpeg"></audio>
 </body>
 </html>
